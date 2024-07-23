@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Search</title>
+    <style>
+        .container {
+            background-color: #0e2613;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .form-group_cabin{
+            
+            background-color: #15361C;
+            width: 300px;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 25px;
+        }
+        .form-group_cabin label {
+            color: #fff;
+        }
+        .form-group_cabin select {
+            background-color: #15361C;
+            color: #fff;
+            border: none;
+            outline: none;
+            width: 100%;
+        }
+        .form-group {
+            background-color: #000;
+            width: 300px;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group label {
+            color: #fff;
+        }
+        .form-group select {
+            background-color: #000;
+            color: #fff;
+            border: none;
+            outline: none;
+            width: 100%;
+        }
+        .no-data-message {
+            background-color: #055C23;
+            width: 300px;
+            height: 50px;
+            text-align: center;
+            padding-top: 20px;
+            color: #fff;
+            border-radius: 5px;
+            margin-bottom: 20px;
+           
+        }
+        #result {
+            margin-top: 20px;
+            margin-left:0px;
+            
+           
+        }
+        .flight-card {
+            background-color: #055C23;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: inline-block;
+            width: 300px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Choose Origin & Destination Airports:</h2>
+
+        <form id="search-form">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="origin">Origin</label>
+                <select id="origin" name="origin">
+                    <option value="JFK">JFK</option>
+                    <option value="DEL">DEL</option>
+                    <option value="SYD">SYD</option>
+                    <option value="BOM">BOM</option>
+                    <option value="BNE">BNE</option>
+                    <option value="BLR">BLR</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="destination">Destination</label>
+                <select id="destination" name="destination">
+                    <option value="JFK">JFK</option>
+                    <option value="DEL">DEL</option>
+                    <option value="SYD">SYD</option>
+                    <option value="LHR">LHR</option>
+                    <option value="CDG">CDG</option>
+                    <option value="DOH">DOH</option>
+                    <option value="SIN">SIN</option>
+                </select>
+            </div>
+
+            <div class="form-group_cabin">
+                <label for="cabin">Cabin Selection</label>
+                <select id="cabin" name="cabin">
+                    <option value="Economy">Economy</option>
+                    <option value="Business">Business</option>
+                    <option value="First">First</option>
+                </select>
+            </div>
+
+            <button type="button" id="search-button" style="width:100px;height:40px;border-radius:5px;background-color:#7FFFD4;">Search</button>
+        </form>
+        <br/>
+        <br/>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('search-button').addEventListener('click', function() {
+                var origin = document.getElementById('origin').value;
+                var destination = document.getElementById('destination').value;
+                var cabin = document.getElementById('cabin').value;
+
+                var jsonData = {
+                    'origin': origin,
+                    'destination': destination,
+                    'partnerPrograms': [
+                        'Air Canada',
+                        'United Airlines',
+                        'KLM',
+                        'Qantas',
+                        'American Airlines',
+                        'Etihad Airways',
+                        'Alaska Airlines',
+                        'Qatar Airways',
+                        'LifeMiles',
+                    ],
+                    'stops': 2,
+                    'departureTimeFrom': '2024-07-09T00:00:00Z',
+                    'departureTimeTo': '2024-10-07T00:00:00Z',
+                    'isOldData': false,
+                    'limit': 302,
+                    'offset': 0,
+                    'cabinSelection': [
+                        cabin,
+                    ],
+                    'date': '2024-07-09T12:00:17.796Z',
+                };
+
+                fetch('https://cardgpt.in/apitest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(jsonData)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    var resultDiv = document.getElementById('result');
+                    resultDiv.innerHTML = '';
+                   
+
+                    if (data.data && data.data.length > 0){
+                        data.data.forEach(flight => {
+                            var flightDiv = document.createElement('div');
+                            flightDiv.style.cssText = 'background-color: #055C23; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: inline-block;width:300px;margin-left:50px;';
+                            flightDiv.style.textAlign = 'center';
+                            var logoImg = document.createElement('img');
+                            logoImg.src = 'logo.png';
+                            logoImg.alt = 'logo';
+                            logoImg.style.cssText = 'width: 50px; height: 50px;';
+
+                            var programTitle = document.createElement('h2');
+                            programTitle.textContent = flight.partner_program;
+
+                            var routeInfo = document.createElement('p');
+                            routeInfo.textContent = `${origin} -> ${destination}`;
+
+                            var timeInfo = document.createElement('p');
+                            timeInfo.textContent = `${formatDate(jsonData.departureTimeFrom)} - ${formatDate(jsonData.departureTimeTo)}`;
+
+                            var business = document.createElement('div');
+                            business.style = 'display:flex;flex-direction:row;height:50px;justify-content:space-evenly;';
+
+                            var businessMiles = document.createElement('h1');
+                            businessMiles.textContent = `${flight.min_business_miles || 'N/A'}`;
+                            businessMiles.style = 'font-size:40px;margin-top:5px;';
+                            business.appendChild(businessMiles);
+
+                            if(flight.min_business_miles){
+                                if(flight.min_business_tax){
+                                    var businessTax = document.createElement('p');
+                                    businessTax.textContent = " + $" +`${flight.min_business_tax || 'N/A'}`;
+                                    businessTax.style = 'margin-top:25px;';
+                                    business.appendChild(businessTax);
+                                }
+                            }
+
+                            var economy = document.createElement('div');
+                            economy.style = 'display:flex;flex-direction:row;height:50px;justify-content:space-evenly;';
+
+                            var economyMiles = document.createElement('h1');
+                            economyMiles.textContent = `${flight.min_economy_miles || 'N/A'}`;
+                            economyMiles.style = 'font-size:40px;margin-top:5px;';
+                            economy.appendChild(economyMiles);
+
+                            if (flight.min_economy_miles){
+                                if (flight.min_economy_tax){
+                                    var economyTax = document.createElement('p');
+                                    economyTax.textContent = " + $" +`${flight.min_economy_tax}`;
+                                    economyTax.style = 'margin-top:25px;';
+                                    economy.appendChild(economyTax);
+                                }
+                            }
+
+                            var businessMilesValue = document.createElement('p');
+                            businessMilesValue.textContent = 'Min Business Miles';
+
+                            var economyMilesValue = document.createElement('p');
+                            economyMilesValue.textContent = 'Min Economy Miles';
+
+                            var first = document.createElement('div');
+                            first.style = 'display:flex;flex-direction:row;height:50px;justify-content:space-evenly;';
+
+                            var firstMiles = document.createElement('h1');
+                            firstMiles.textContent = `${flight.min_first_miles || 'N/A'}`;
+                            firstMiles.style = 'font-size:40px;margin-top:5px;';
+                            first.appendChild(firstMiles);
+
+                            if (flight.min_first_miles) {
+                                if (flight.min_first_tax){
+                                    var firstTax = document.createElement('p');
+                                    firstTax.textContent = " + $" + `${flight.min_first_tax}`;
+                                    firstTax.style = 'margin-top:25px;';
+                                    first.appendChild(firstTax);
+                                }
+                            }
+
+                            var firstMilesValue = document.createElement('p');
+                            firstMilesValue.textContent = 'Min First Miles';
+
+                            var emptyLine = document.createElement('div');
+                            emptyLine.style = 'height:10px;';
+
+                            flightDiv.appendChild(logoImg);
+                            flightDiv.appendChild(programTitle);
+                            flightDiv.appendChild(routeInfo);
+                            flightDiv.appendChild(timeInfo);
+                            flightDiv.appendChild(emptyLine);
+                            flightDiv.appendChild(business);
+                            flightDiv.appendChild(businessMilesValue);
+                            flightDiv.appendChild(economy);
+                            flightDiv.appendChild(economyMilesValue);
+                            flightDiv.appendChild(emptyLine);
+                            flightDiv.appendChild(first);
+                            flightDiv.appendChild(firstMilesValue);
+
+                            resultDiv.appendChild(flightDiv);
+                        });
+                    } else {
+                        var noDataMessage = document.createElement('div');
+                        noDataMessage.className = 'no-data-message';
+                        noDataMessage.textContent = 'Try another search route.';
+                       
+                        resultDiv.appendChild(noDataMessage);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+
+                function formatDate(dateString) {
+                    var date = new Date(dateString);
+                    return date.toISOString().split('T')[0]; // Extracts YYYY-MM-DD
+                }
+            });
+        });
+    </script>
+</body>
+</html>
